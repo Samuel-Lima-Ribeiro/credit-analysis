@@ -12,6 +12,14 @@ spring:
     username: admin
     password: senha123
     driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 0
+      maximum-pool-size: 15
+      connection-timeout: 1000
+      idle-timeout: 300000
+      max-lifetime: 600000
+      initialization-fail-timeout: -1
+      validation-timeout: 1000
   jpa:
     generate-ddl: false
     show-sql: true
