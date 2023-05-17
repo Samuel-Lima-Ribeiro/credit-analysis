@@ -3,8 +3,10 @@ package com.client.credit.analysis.controller;
 import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
 import com.client.credit.analysis.service.CreditAnalysisService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,8 +24,8 @@ public class CreditAnalysisController {
         return creditAnalysisService.create(creditAnalysisRequest);
     }
 
-    @GetMapping(path = "sla")
-    public void sla() {
-        System.out.println("aaaaaa");
+    @GetMapping(path = "/{id}")
+    public void buscarClient(@PathVariable(value = "id") UUID id) {
+        creditAnalysisService.searchClient(id);
     }
 }
