@@ -4,6 +4,7 @@ import com.client.credit.analysis.apiclient.ApiClient;
 import com.client.credit.analysis.apiclient.dto.ApiClientDto;
 import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
+import com.client.credit.analysis.exception.AnalysisNotFoundException;
 import com.client.credit.analysis.exception.ClientNotFoundException;
 import com.client.credit.analysis.exception.NumberNotNegative;
 import com.client.credit.analysis.mapper.AnalysisEntityMapper;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -141,7 +143,36 @@ public class CreditAnalysisService {
         }
     }
 
-    public List<AnalysisEntity> findAllClients() {
-        return creditAnalysisRepository.findAll();
+    public List<CreditAnalysisResponse> findAllClients() {
+        final List<AnalysisEntity> analysis;
+        analysis = creditAnalysisRepository.findAll();
+        return analysis.stream()
+                .map(creditAnalysisReponseMapper::from)
+                .collect(Collectors.toList());
+    }
+
+    public CreditAnalysisResponse getAnalysisById(UUID id) {
+        final AnalysisEntity analysis = creditAnalysisRepository.findById(id)
+                        .orElseThrow(() ->
+                                new AnalysisNotFoundException("Analysis not found by id %s".formatted(id)));
+        return creditAnalysisReponseMapper.from(analysis);
+    }
+
+    public List<CreditAnalysisResponse> getAnalysisByClient(String id) {
+        final Integer LengthMaxCpf = 15;
+        final List<AnalysisEntity> analysis;
+        if (id.length() < LengthMaxCpf) {
+            id = formatCpf(id);
+            analysis = creditAnalysisRepository.findByClientCpf(id);
+        } else {
+            analysis = creditAnalysisRepository.findByClientId(UUID.fromString(id));
+        }
+        return analysis.stream()
+                .map(creditAnalysisReponseMapper::from)
+                .collect(Collectors.toList());
+    }
+
+    private static String formatCpf(String cpf) {
+        return cpf.replaceAll("[-.]", "");
     }
 }
