@@ -2,7 +2,9 @@ package com.client.credit.analysis.controller;
 
 import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
+import com.client.credit.analysis.repository.entity.AnalysisEntity;
 import com.client.credit.analysis.service.CreditAnalysisService;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,5 +29,10 @@ public class CreditAnalysisController {
     @GetMapping(path = "/{id}")
     public void buscarClient(@PathVariable(value = "id") UUID id) {
         creditAnalysisService.searchClient(id);
+    }
+
+    @GetMapping
+    public List<AnalysisEntity> searchAllClients() {
+        return creditAnalysisService.findAllClients();
     }
 }

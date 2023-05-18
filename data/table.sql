@@ -1,11 +1,11 @@
 CREATE TABLE IF NOT EXISTS ANALYSIS(
     id uuid NOT NULL,
     approved boolean NOT NULL,
-    approvedLimit decimal(10,2) NOT NULL,
-    requestedAmount decimal(10, 2) NOT NULL,
-    withdraw decimal(10, 2) NOT NULL,
-    annualInterest decimal(10, 2) NOT NULL,
-    clientId uuid NOT NULL,
+    approved_limit decimal(10,2),
+    withdraw decimal(10, 2),
+    annual_interest decimal(10, 2),
+    client_id uuid NOT NULL,
+    client_cpf varchar(11),
     date timestamp,
     PRIMARY KEY(id)
 );
