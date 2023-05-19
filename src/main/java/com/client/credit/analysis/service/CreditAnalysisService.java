@@ -38,27 +38,15 @@ public class CreditAnalysisService {
     }
 
     public CreditAnalysisResponse create(CreditAnalysisRequest creditAnalysisRequest) {
-        // Entity salva cpf e id, salvo tudo no model, model salvo pra entity, entiy pra response tiro oq n me interessa
 
-        // segundo vejo se tem o client ou não
         final ApiClientDto apiClientDto = searchClient(creditAnalysisRequest.clientId());
 
-        // Terceiro faço analise e já buildo
         final CreditAnalysis creditAnalysis = analisar(creditAnalysisRequest);
 
-        System.out.println("Depois da analise foi isso que ocorreu: " + creditAnalysis);
-
-        // por último atualizo meu client com o cpf se tudo tiver ok
         final CreditAnalysis creditAnalysisUpdateClient = creditAnalysis.updateFromClient(apiClientDto);
-        System.out.println("Cliente Atualizado " + creditAnalysisUpdateClient);
 
-        //Transformo em entity agora
         final AnalysisEntity analysisEntity = analysisEntityMapper.from(creditAnalysisUpdateClient);
         final AnalysisEntity analysisSaved = creditAnalysisRepository.save(analysisEntity);
-
-        System.out.println("Está salvando esse cara aq " + analysisSaved);
-        final CreditAnalysisResponse creditAnalysisResponse = creditAnalysisReponseMapper.from(analysisSaved);
-        System.out.println("Retorna isso + " + creditAnalysisResponse);
 
         return creditAnalysisReponseMapper.from(analysisSaved);
     }
@@ -69,7 +57,6 @@ public class CreditAnalysisService {
         final int checkingRequestedAmount = requestedAmount.compareTo(BigDecimal.ZERO);
         final int checkingMonthlyIncome = monthlyIncome.compareTo(BigDecimal.ZERO);
 
-        //Verifico se os números são negativos
         if (checkingRequestedAmount <= 0) {
             throw new NumberNotNegativeException("AmountRequest cannot be negative or zero");
         } else if (checkingMonthlyIncome <= 0) {
@@ -89,7 +76,6 @@ public class CreditAnalysisService {
 
         final int checkingRequestAmountGreaterThanMonthlyIncome = requestedAmount.compareTo(monthlyIncome);
 
-        // verifico se pedido é maior que renda
         if (checkingRequestAmountGreaterThanMonthlyIncome > 0) {
             System.out.println("Request foi maior que o salario");
 
@@ -130,10 +116,6 @@ public class CreditAnalysisService {
                 .withdraw(withdraw)
                 .annualInterest(annualInterest)
                 .build();
-    }
-
-    public void save() {
-
     }
 
     public ApiClientDto searchClient(UUID id) {
