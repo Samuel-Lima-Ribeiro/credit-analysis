@@ -6,7 +6,7 @@ import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
 import com.client.credit.analysis.exception.AnalysisNotFoundException;
 import com.client.credit.analysis.exception.ClientNotFoundException;
-import com.client.credit.analysis.exception.NumberNotNegative;
+import com.client.credit.analysis.exception.NumberNotNegativeException;
 import com.client.credit.analysis.mapper.AnalysisEntityMapper;
 import com.client.credit.analysis.mapper.CreditAnalysisMapper;
 import com.client.credit.analysis.mapper.CreditAnalysisReponseMapper;
@@ -33,13 +33,14 @@ public class CreditAnalysisService {
     private final ApiClient apiClient;
     private final CreditAnalysisReponseMapper creditAnalysisReponseMapper;
 
+    private static String formatCpf(String cpf) {
+        return cpf.replaceAll("[-.]", "");
+    }
+
     public CreditAnalysisResponse create(CreditAnalysisRequest creditAnalysisRequest) {
         // Entity salva cpf e id, salvo tudo no model, model salvo pra entity, entiy pra response tiro oq n me interessa
 
-        //        // primeiro crio
-        //        final CreditAnalysis creditAnalysis = creditAnalysisMapper.from(creditAnalysisRequest);
-
-        // segundo vejo se tem o client ou n
+        // segundo vejo se tem o client ou não
         final ApiClientDto apiClientDto = searchClient(creditAnalysisRequest.clientId());
 
         // Terceiro faço analise e já buildo
@@ -47,7 +48,7 @@ public class CreditAnalysisService {
 
         System.out.println("Depois da analise foi isso que ocorreu: " + creditAnalysis);
 
-        // por ultimo atualizo meu client com o cpf se tudo tiver ok
+        // por último atualizo meu client com o cpf se tudo tiver ok
         final CreditAnalysis creditAnalysisUpdateClient = creditAnalysis.updateFromClient(apiClientDto);
         System.out.println("Cliente Atualizado " + creditAnalysisUpdateClient);
 
@@ -65,69 +66,70 @@ public class CreditAnalysisService {
     public CreditAnalysis analisar(CreditAnalysisRequest request) {
         final BigDecimal requestedAmount = request.requestedAmount();
         final BigDecimal monthlyIncome = request.monthlyIncome();
-        final int verificandoValorAmount = requestedAmount.compareTo(BigDecimal.ZERO);
-        final int verificandoValorMonthly = monthlyIncome.compareTo(BigDecimal.ZERO);
+        final int checkingRequestedAmount = requestedAmount.compareTo(BigDecimal.ZERO);
+        final int checkingMonthlyIncome = monthlyIncome.compareTo(BigDecimal.ZERO);
 
         //Verifico se os números são negativos
-        if (verificandoValorAmount <= 0) {
-            throw new NumberNotNegative("AmountRequest não pode ser negativo ou zero");
-        } else if (verificandoValorMonthly <= 0) {
-            throw new NumberNotNegative("MonthlyIncome não pode ser negativo ou zero");
+        if (checkingRequestedAmount <= 0) {
+            throw new NumberNotNegativeException("AmountRequest cannot be negative or zero");
+        } else if (checkingMonthlyIncome <= 0) {
+            throw new NumberNotNegativeException("MonthlyIncome cannot be negative or zero");
         }
 
         //Talvez esse daq seja da linha 27, ou colocar isso para validar dps do MaiorQue
         //Verifico se o limite pasosu de 50, entao vira 50
-        BigDecimal calAmountRequest = request.monthlyIncome();
-        final BigDecimal AMOUNT_LIMIT = BigDecimal.valueOf(50000);
-        final int verificandoValorMaximoRenda = monthlyIncome.compareTo(AMOUNT_LIMIT);
-        if (verificandoValorMaximoRenda > 0) {
-            calAmountRequest = AMOUNT_LIMIT;
+        BigDecimal monthlyIncomeLimitForCalculate = monthlyIncome;
+        final BigDecimal amountLimit = BigDecimal.valueOf(50000);
+        final int checkingMonthlyIncomeValue = monthlyIncome.compareTo(amountLimit);
+
+        if (checkingMonthlyIncomeValue > 0) {
+            monthlyIncomeLimitForCalculate = amountLimit;
             System.out.println("Reatribuindo valor do amountRequest");
         }
 
-        final int verificandorequestAmountMaiorQueMonthlyIncome = requestedAmount.compareTo(monthlyIncome);
+        final int checkingRequestAmountGreaterThanMonthlyIncome = requestedAmount.compareTo(monthlyIncome);
 
         // verifico se pedido é maior que renda
-        if (verificandorequestAmountMaiorQueMonthlyIncome > 0) {
+        if (checkingRequestAmountGreaterThanMonthlyIncome > 0) {
             System.out.println("Request foi maior que o salario");
 
-            final CreditAnalysis creditAnalysis = CreditAnalysis.builder()
+            return CreditAnalysis.builder()
                     .approved(false)
                     .build();
-            return creditAnalysis;
         }
 
         // Verificando se o pedido é maior que 50 porcento da renda ou n
-        final BigDecimal cinquentaPorcentoRenda = calAmountRequest.multiply(BigDecimal.valueOf(0.50));
-        final BigDecimal porcentagemAprovacaoLimite;
+        final BigDecimal fiftyPercentOfIncome = monthlyIncomeLimitForCalculate.multiply(BigDecimal.valueOf(0.50));
+        final BigDecimal approvalLimitPercentage;
 
-        if (requestedAmount.compareTo(cinquentaPorcentoRenda) > 0) {
-            final BigDecimal porcentagemRenda50 = BigDecimal.valueOf(0.15);
-            porcentagemAprovacaoLimite = porcentagemRenda50;
+        if (requestedAmount.compareTo(fiftyPercentOfIncome) > 0) {
+            final BigDecimal percentageToCalculateLimit = BigDecimal.valueOf(0.15);
+            approvalLimitPercentage = percentageToCalculateLimit;
             System.out.println("Caiu no maior que 50, retorna 15");
         } else {
-            final BigDecimal porcentagemRenda50 = BigDecimal.valueOf(0.30);
-            porcentagemAprovacaoLimite = porcentagemRenda50;
+            final BigDecimal percentageToCalculateLimit = BigDecimal.valueOf(0.30);
+            approvalLimitPercentage = percentageToCalculateLimit;
             System.out.println("Caiu no maior que 30, retorna 30");
         }
 
-        final BigDecimal approvedLimit = calAmountRequest.multiply(porcentagemAprovacaoLimite).setScale(2, RoundingMode.HALF_EVEN);
+        final BigDecimal approvedLimit = monthlyIncomeLimitForCalculate.multiply(approvalLimitPercentage).setScale(2, RoundingMode.HALF_EVEN);
 
-        final BigDecimal porcentagemLimitSaque = BigDecimal.valueOf(0.10);
+        // limite saque
+        final BigDecimal withdrawalLimitPercentage = BigDecimal.valueOf(0.10);
 
+        // taxa anual
         final BigDecimal annualInterest = BigDecimal.valueOf(0.15);
 
-        final BigDecimal withdraw = approvedLimit.multiply(porcentagemLimitSaque).setScale(2, RoundingMode.HALF_EVEN);
+        final BigDecimal withdraw = approvedLimit.multiply(withdrawalLimitPercentage).setScale(2, RoundingMode.HALF_EVEN);
         System.out.printf("Limite aprovado do quantia mensal %.2f do pedido %.2f foi de %.2f limite do saque 10%% %.2f %n", monthlyIncome,
                 requestedAmount, approvedLimit, withdraw);
 
-        final CreditAnalysis creditAnalysis = CreditAnalysis.builder()
+        return CreditAnalysis.builder()
                 .approved(true)
                 .approvedLimit(approvedLimit)
                 .withdraw(withdraw)
                 .annualInterest(annualInterest)
                 .build();
-        return creditAnalysis;
     }
 
     public void save() {
@@ -153,8 +155,8 @@ public class CreditAnalysisService {
 
     public CreditAnalysisResponse getAnalysisById(UUID id) {
         final AnalysisEntity analysis = creditAnalysisRepository.findById(id)
-                        .orElseThrow(() ->
-                                new AnalysisNotFoundException("Analysis not found by id %s".formatted(id)));
+                .orElseThrow(() ->
+                        new AnalysisNotFoundException("Analysis not found by id %s".formatted(id)));
         return creditAnalysisReponseMapper.from(analysis);
     }
 
@@ -170,9 +172,5 @@ public class CreditAnalysisService {
         return analysis.stream()
                 .map(creditAnalysisReponseMapper::from)
                 .collect(Collectors.toList());
-    }
-
-    private static String formatCpf(String cpf) {
-        return cpf.replaceAll("[-.]", "");
     }
 }
