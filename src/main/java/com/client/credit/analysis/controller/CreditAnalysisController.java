@@ -4,6 +4,7 @@ import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
 import com.client.credit.analysis.service.CreditAnalysisService;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,5 +36,10 @@ public class CreditAnalysisController {
     @GetMapping(path = "/analysis/client/{id}")
     public List<CreditAnalysisResponse> getAnalysisByClient(@PathVariable(value = "id") String id) {
         return creditAnalysisService.getAnalysisByClient(id);
+    }
+
+    @GetMapping(path = "/analysis/{id}")
+    public CreditAnalysisResponse getAnalysis(@PathVariable(value = "id") UUID id) {
+        return creditAnalysisService.getAnalysisById(id);
     }
 }

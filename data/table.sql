@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS ANALYSIS(
     withdraw NUMERIC(10, 2),
     annual_interest NUMERIC(10, 2),
     client_id uuid NOT NULL,
-    client_cpf varchar(11),
+    client_cpf varchar(11) NOT NULL,
     date timestamp,
     PRIMARY KEY(id)
 );

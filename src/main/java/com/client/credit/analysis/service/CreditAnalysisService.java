@@ -8,7 +8,6 @@ import com.client.credit.analysis.exception.AnalysisNotFoundException;
 import com.client.credit.analysis.exception.ClientNotFoundException;
 import com.client.credit.analysis.exception.NumberNotNegativeException;
 import com.client.credit.analysis.mapper.AnalysisEntityMapper;
-import com.client.credit.analysis.mapper.CreditAnalysisMapper;
 import com.client.credit.analysis.mapper.CreditAnalysisReponseMapper;
 import com.client.credit.analysis.model.CreditAnalysis;
 import com.client.credit.analysis.repository.CreditAnalysisRepository;
@@ -25,8 +24,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CreditAnalysisService {
-
-    private final CreditAnalysisMapper creditAnalysisMapper;
 
     private final CreditAnalysisRepository creditAnalysisRepository;
     private final AnalysisEntityMapper analysisEntityMapper;
