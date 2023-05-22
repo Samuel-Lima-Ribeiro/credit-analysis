@@ -3,6 +3,7 @@ package com.client.credit.analysis.exceptionhandler;
 import com.client.credit.analysis.exception.AnalysisNotFoundException;
 import com.client.credit.analysis.exception.ClientNotFoundException;
 import com.client.credit.analysis.exception.NumberNotNegativeException;
+import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
@@ -36,9 +37,18 @@ public class ControlExceptionHandler {
     @ExceptionHandler(AnalysisNotFoundException.class)
     public ProblemDetail analysisNotFoundHandleException(AnalysisNotFoundException exception) {
         final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400"));
+        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404"));
         problemDetail.setProperty(TIMESTAMP, LocalDateTime.now());
         problemDetail.setDetail(exception.getMessage());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail constraintViolationExceptionHandle(ConstraintViolationException exception) {
+        final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/422"));
+        problemDetail.setProperty(TIMESTAMP, LocalDateTime.now());
+        problemDetail.setDetail(exception.getConstraintViolations().toString());
         return problemDetail;
     }
 }

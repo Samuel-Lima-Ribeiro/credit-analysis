@@ -9,5 +9,4 @@ public interface CreditAnalysisRepository extends JpaRepository<AnalysisEntity, 
 
     List<AnalysisEntity> findByClientId(UUID clientId);
 
-    List<AnalysisEntity> findByClientCpf(String cpf);
 }
