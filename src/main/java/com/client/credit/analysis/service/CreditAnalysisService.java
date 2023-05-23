@@ -138,7 +138,6 @@ public class CreditAnalysisService {
         if (id.length() < LengthMaxCpf) {
             id = formatCpf(id);
             final ApiClientDto client = apiClient.getClientByCpf(id);
-            System.out.println(client.id() + " ID DO CARA");
             analysis = creditAnalysisRepository.findByClientId(client.id());
         } else {
             analysis = creditAnalysisRepository.findByClientId(UUID.fromString(id));

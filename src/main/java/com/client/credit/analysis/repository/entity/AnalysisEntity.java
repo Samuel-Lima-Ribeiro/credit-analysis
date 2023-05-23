@@ -22,7 +22,6 @@ public class AnalysisEntity {
     BigDecimal withdraw;
     BigDecimal annualInterest;
     UUID clientId;
-    String clientCpf;
     @CreationTimestamp
     @Column(name = "date")
     LocalDateTime date;
@@ -32,21 +31,19 @@ public class AnalysisEntity {
     }
 
     @Builder
-    public AnalysisEntity(Boolean approved, BigDecimal approvedLimit, BigDecimal withdraw, BigDecimal annualInterest, UUID clientId,
-                          String clientCpf) {
+    public AnalysisEntity(Boolean approved, BigDecimal approvedLimit, BigDecimal withdraw, BigDecimal annualInterest, UUID clientId) {
         this.id = UUID.randomUUID();
         this.approved = approved;
         this.approvedLimit = approvedLimit;
         this.withdraw = withdraw;
         this.annualInterest = annualInterest;
         this.clientId = clientId;
-        this.clientCpf = clientCpf;
     }
 
     @Override
     public String toString() {
         return "AnalysisEntity{" + "id=" + id + ", approved=" + approved + ", approvedLimit=" + approvedLimit + ", withdraw=" + withdraw
-                + ", annualInterest=" + annualInterest + ", clientId=" + clientId + ", clientCpf='" + clientCpf + '\'' + ", date=" + date + '}';
+                + ", annualInterest=" + annualInterest + ", clientId=" + clientId + '\'' + ", date=" + date + '}';
     }
 
     public UUID getId() {
@@ -95,14 +92,6 @@ public class AnalysisEntity {
 
     public void setClientId(UUID clientId) {
         this.clientId = clientId;
-    }
-
-    public String getClientCpf() {
-        return clientCpf;
-    }
-
-    public void setClientCpf(String clientCpf) {
-        this.clientCpf = clientCpf;
     }
 
     public LocalDateTime getDate() {
