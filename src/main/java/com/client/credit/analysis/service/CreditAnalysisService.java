@@ -20,11 +20,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class CreditAnalysisService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreditAnalysisService.class);
 
     private final CreditAnalysisRepository creditAnalysisRepository;
     private final AnalysisEntityMapper analysisEntityMapper;
@@ -38,14 +42,21 @@ public class CreditAnalysisService {
 
     public CreditAnalysisResponse create(CreditAnalysisRequest creditAnalysisRequest) {
         final CreditAnalysis creditAnalysis = creditAnalysisMapper.from(creditAnalysisRequest);
+        final UUID idClient = creditAnalysis.clientId();
 
-        final ApiClientDto apiClientDto = searchClient(creditAnalysis.clientId());
+        LOGGER.info("Buscando na api o cliente do id %s".formatted(idClient));
+        final ApiClientDto apiClientDto = searchClient(idClient);
+        LOGGER.info("Cliente encontrado");
 
-        final CreditAnalysis creditAnalysisUpdateAnalysis = creditAnalysis.updateFromAnalysis(analisar(creditAnalysisRequest));
+        LOGGER.info("Fazendo análise de credito");
+        final CreditAnalysis creditAnalysisUpdateAnalysis = creditAnalysis
+                .updateFromAnalysis(analisar(creditAnalysisRequest));
 
-        final CreditAnalysis creditAnalysisUpdateClient = creditAnalysisUpdateAnalysis.updateFromClient(apiClientDto);
+        final CreditAnalysis creditAnalysisUpdateClient = creditAnalysisUpdateAnalysis
+                .updateFromClient(apiClientDto);
 
         final AnalysisEntity analysisEntity = analysisEntityMapper.from(creditAnalysisUpdateClient);
+        LOGGER.info("Salvando análise");
         final AnalysisEntity analysisSaved = creditAnalysisRepository.save(analysisEntity);
 
         return creditAnalysisReponseMapper.from(analysisSaved);
@@ -72,9 +83,11 @@ public class CreditAnalysisService {
             monthlyIncomeLimitForCalculate = amountLimit;
         }
 
-        final int checkingRequestAmountGreaterThanMonthlyIncome = requestedAmount.compareTo(monthlyIncome);
+        final int checkingRequestAmountGreaterThanMonthlyIncome = requestedAmount
+                .compareTo(monthlyIncome);
 
         if (checkingRequestAmountGreaterThanMonthlyIncome > 0) {
+            LOGGER.info("Análise não aprovada");
             return CreditAnalysis.builder()
                     .approved(false)
                     .approvedLimit(BigDecimal.ZERO)
@@ -83,7 +96,9 @@ public class CreditAnalysisService {
                     .build();
         }
 
-        final BigDecimal fiftyPercentOfIncome = monthlyIncomeLimitForCalculate.multiply(BigDecimal.valueOf(0.50));
+        final BigDecimal fiftyPercentOfIncome = monthlyIncomeLimitForCalculate
+                .multiply(BigDecimal.valueOf(0.50));
+
         final BigDecimal approvalLimitPercentage;
 
         if (requestedAmount.compareTo(fiftyPercentOfIncome) > 0) {
@@ -101,6 +116,7 @@ public class CreditAnalysisService {
         final BigDecimal annualInterest = BigDecimal.valueOf(15);
 
         final BigDecimal withdraw = approvedLimit.multiply(withdrawalLimitPercentage).setScale(2, RoundingMode.HALF_EVEN);
+        LOGGER.info("Análise aprovada");
         return CreditAnalysis.builder()
                 .approved(true)
                 .approvedLimit(approvedLimit)
@@ -118,6 +134,7 @@ public class CreditAnalysisService {
     }
 
     public List<CreditAnalysisResponse> findAllClients() {
+        LOGGER.info("Mostrando todas análises cadastradas");
         final List<AnalysisEntity> analysis;
         analysis = creditAnalysisRepository.findAll();
         return analysis.stream()
@@ -126,6 +143,7 @@ public class CreditAnalysisService {
     }
 
     public CreditAnalysisResponse getAnalysisById(UUID id) {
+        LOGGER.info("Consultando análise pelo id %s".formatted(id));
         final AnalysisEntity analysis = creditAnalysisRepository.findById(id)
                 .orElseThrow(() ->
                         new AnalysisNotFoundException("Analysis not found by id %s".formatted(id)));
@@ -136,12 +154,16 @@ public class CreditAnalysisService {
         final int LengthMaxCpf = 15;
         final List<AnalysisEntity> analysis;
         if (id.length() < LengthMaxCpf) {
-            id = formatCpf(id);
-            final ApiClientDto client = apiClient.getClientByCpf(id);
+            final String idFormat = formatCpf(id);
+            LOGGER.info("Buscando na api o cliente do cpf %s".formatted(idFormat));
+            final ApiClientDto client = apiClient.getClientByCpf(idFormat).orElseThrow(() ->
+                    new ClientNotFoundException("Client not found by cpf %s".formatted(idFormat)));
             analysis = creditAnalysisRepository.findByClientId(client.id());
         } else {
+            LOGGER.info("Consultando análise pelo id %s do cliente".formatted(id));
             analysis = creditAnalysisRepository.findByClientId(UUID.fromString(id));
         }
+        LOGGER.info("Retornando análises encontradas");
         return analysis.stream()
                 .map(creditAnalysisReponseMapper::from)
                 .collect(Collectors.toList());

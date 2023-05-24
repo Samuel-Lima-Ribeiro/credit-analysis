@@ -9,6 +9,7 @@ import com.client.credit.analysis.apiclient.ApiClient;
 import com.client.credit.analysis.apiclient.dto.ApiClientDto;
 import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
+import com.client.credit.analysis.exception.ClientNotFoundException;
 import com.client.credit.analysis.exception.NumberNotNegativeException;
 import com.client.credit.analysis.mapper.AnalysisEntityMapper;
 import com.client.credit.analysis.mapper.AnalysisEntityMapperImpl;
@@ -18,8 +19,8 @@ import com.client.credit.analysis.mapper.CreditAnalysisReponseMapper;
 import com.client.credit.analysis.mapper.CreditAnalysisReponseMapperImpl;
 import com.client.credit.analysis.repository.CreditAnalysisRepository;
 import com.client.credit.analysis.repository.entity.AnalysisEntity;
+import feign.FeignException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -56,7 +57,7 @@ class CreditAnalysisServiceTest {
     @Captor ArgumentCaptor<AnalysisEntity> analysisEntityArgumentCaptor;
 
     @Test
-    void deve_aprovar_30Porcent_da_renda_quando_valor_solicitado_for_menor_ou_igual_50Porcent_da_renda() {
+    void deve_aprovar_30Porcento_da_renda_quando_valor_solicitado_for_menor_ou_igual_50Porcento_da_renda() {
         final CreditAnalysisRequest creditRequest = creditAnalysisRequest30PorcentFactory();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
@@ -109,6 +110,25 @@ class CreditAnalysisServiceTest {
     }
 
     @Test
+    void deve_fazer_caculo_da_analise_utilizando_valor_maximo_da_renda_considerado() {
+        CreditAnalysisRequest request = CreditAnalysisRequest.builder()
+                .monthlyIncome(BigDecimal.valueOf(100000.00))
+                .requestedAmount(BigDecimal.valueOf(40000.00))
+                .build();
+
+        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
+        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture()))
+                .thenReturn(analysisEntityCalculateMaxFactory());
+
+        final CreditAnalysisResponse creditResponse = creditAnalysisService.create(request);
+        final AnalysisEntity analysisEntity = analysisEntityArgumentCaptor.getValue();
+
+        assertEquals(creditResponse.approved(), analysisEntity.getApproved());
+        assertEquals(creditResponse.approvedLimit(), analysisEntity.getApprovedLimit());
+        assertEquals(creditResponse.withdraw(), analysisEntity.getWithdraw());
+    }
+
+    @Test
     void deve_lancar_NumberNotNegativeException_ao_solicitar_analise_com_numeros_negativos_ou_zero_na_renda() {
         CreditAnalysisRequest creditAnalysisRequest = CreditAnalysisRequest.builder()
                 .requestedAmount(BigDecimal.valueOf(1000.0))
@@ -118,7 +138,18 @@ class CreditAnalysisServiceTest {
         final NumberNotNegativeException numberNotNegativeException = assertThrows(NumberNotNegativeException.class, () ->
                 creditAnalysisService.create(creditAnalysisRequest));
 
-        assertEquals(numberNotNegativeException.getMessage(), "MonthlyIncome cannot be negative or zero");
+        assertEquals("MonthlyIncome cannot be negative or zero", numberNotNegativeException.getMessage());
+    }
+
+    @Test
+    void deve_lancar_ClientNotFoundException_ao_consultar_api_por_id_inexistente() {
+        final CreditAnalysisRequest request = creditAnalysisRequest15PorcentFactory();
+
+        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenThrow(FeignException.class);
+        ClientNotFoundException clientNotFoundException = assertThrows(ClientNotFoundException.class,
+                () -> creditAnalysisService.create(request));
+
+        assertEquals("Client not found by id 438b2f95-4560-415b-98c2-9770cc1c4d93", clientNotFoundException.getMessage());
     }
 
     @Test
@@ -130,7 +161,7 @@ class CreditAnalysisServiceTest {
         final NumberNotNegativeException numberNotNegativeException = assertThrows(NumberNotNegativeException.class, () ->
                 creditAnalysisService.create(creditAnalysisRequest));
 
-        assertEquals(numberNotNegativeException.getMessage(), "AmountRequest cannot be negative or zero");
+        assertEquals("AmountRequest cannot be negative or zero", numberNotNegativeException.getMessage());
     }
 
     public static AnalysisEntity analysisEntityApprovedFactory() {
@@ -155,6 +186,15 @@ class CreditAnalysisServiceTest {
                 .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
                 .monthlyIncome(BigDecimal.valueOf(3000.00))
                 .requestedAmount(BigDecimal.valueOf(2000.00))
+                .build();
+    }
+
+    public static AnalysisEntity analysisEntityCalculateMaxFactory() {
+        return AnalysisEntity.builder()
+                .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
+                .approved(true)
+                .approvedLimit(BigDecimal.valueOf(7500.00).setScale(2))
+                .withdraw(BigDecimal.valueOf(750.00).setScale(2))
                 .build();
     }
 

@@ -1,6 +1,7 @@
 package com.client.credit.analysis.apiclient;
 
 import com.client.credit.analysis.apiclient.dto.ApiClientDto;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,5 +15,5 @@ public interface ApiClient {
     ApiClientDto getClientById(@PathVariable(value = "id") UUID id);
 
     @GetMapping()
-    ApiClientDto getClientByCpf(@RequestParam(value = "cpf") String cpf);
+    Optional<ApiClientDto> getClientByCpf(@RequestParam(value = "cpf") String cpf);
 }
