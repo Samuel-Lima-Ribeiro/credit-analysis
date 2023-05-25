@@ -1,14 +1,14 @@
 package com.client.credit.analysis.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+
 import com.client.credit.analysis.apiclient.ApiClient;
 import com.client.credit.analysis.apiclient.dto.ApiClientDto;
 import com.client.credit.analysis.controller.request.CreditAnalysisRequest;
 import com.client.credit.analysis.controller.response.CreditAnalysisResponse;
+import com.client.credit.analysis.exception.AnalysisNotFoundException;
 import com.client.credit.analysis.exception.ClientNotFoundException;
 import com.client.credit.analysis.exception.NumberNotNegativeException;
 import com.client.credit.analysis.mapper.AnalysisEntityMapper;
@@ -21,6 +21,8 @@ import com.client.credit.analysis.repository.CreditAnalysisRepository;
 import com.client.credit.analysis.repository.entity.AnalysisEntity;
 import feign.FeignException;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -37,6 +39,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class CreditAnalysisServiceTest {
 
+    private static final UUID id = UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93");
     @Mock
     private CreditAnalysisRepository creditAnalysisRepository;
     @Mock
@@ -47,96 +50,161 @@ class CreditAnalysisServiceTest {
     private CreditAnalysisMapper creditAnalysisMapper = new CreditAnalysisMapperImpl();
     @Spy
     private CreditAnalysisReponseMapper creditAnalysisReponseMapper = new CreditAnalysisReponseMapperImpl();
-
     @InjectMocks
     private CreditAnalysisService creditAnalysisService;
-
     @Captor
     private ArgumentCaptor<UUID> uuidArgumentCaptor;
+    @Captor
+    private ArgumentCaptor<AnalysisEntity> analysisEntityArgumentCaptor;
+    @Captor
+    private ArgumentCaptor<String> cpfArgumentCaptor;
 
-    @Captor ArgumentCaptor<AnalysisEntity> analysisEntityArgumentCaptor;
+    public static AnalysisEntity analysisEntityApprovedFactory() {
+        return AnalysisEntity.builder()
+                .approved(false)
+                .approvedLimit(BigDecimal.ZERO)
+                .withdraw(BigDecimal.ZERO)
+                .annualInterest(BigDecimal.ZERO)
+                .build();
+    }
+
+    public static CreditAnalysisRequest creditAnalysisRequest30PorcentFactory() {
+        return CreditAnalysisRequest.builder()
+                .clientId(id)
+                .monthlyIncome(BigDecimal.valueOf(3000.00))
+                .requestedAmount(BigDecimal.valueOf(1500.00))
+                .build();
+    }
+
+    public static CreditAnalysisRequest creditAnalysisRequest15PorcentFactory() {
+        return CreditAnalysisRequest.builder()
+                .clientId(id)
+                .monthlyIncome(BigDecimal.valueOf(3000.00))
+                .requestedAmount(BigDecimal.valueOf(2000.00))
+                .build();
+    }
+
+    public static AnalysisEntity analysisEntityCalculateMaxFactory() {
+        return AnalysisEntity.builder()
+                .clientId(id)
+                .approved(true)
+                .approvedLimit(BigDecimal.valueOf(7500.00).setScale(2))
+                .withdraw(BigDecimal.valueOf(750.00).setScale(2))
+                .build();
+    }
+
+    public static ApiClientDto apiClientDtoFactory() {
+        return ApiClientDto.builder()
+                .id(id)
+                .build();
+    }
+
+    public static AnalysisEntity analysisEntity30PorcentFactory() {
+        return AnalysisEntity.builder()
+                .approved(true)
+                .approvedLimit(BigDecimal.valueOf(900.00).setScale(2))
+                .withdraw(BigDecimal.valueOf(90.00).setScale(2))
+                .annualInterest(BigDecimal.valueOf(15))
+                .clientId(id)
+                .build();
+    }
+
+    public static AnalysisEntity analysisEntity15PorcentFactory() {
+        return AnalysisEntity.builder()
+                .approved(true)
+                .approvedLimit(BigDecimal.valueOf(450.00).setScale(2))
+                .withdraw(BigDecimal.valueOf(45.00).setScale(2))
+                .annualInterest(BigDecimal.valueOf(15))
+                .clientId(id)
+                .build();
+    }
+
+//    @Test
+//    void
 
     @Test
     void deve_aprovar_30Porcento_da_renda_quando_valor_solicitado_for_menor_ou_igual_50Porcento_da_renda() {
-        final CreditAnalysisRequest creditRequest = creditAnalysisRequest30PorcentFactory();
+        final CreditAnalysisRequest request = creditAnalysisRequest30PorcentFactory();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
         when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture()))
                 .thenReturn(analysisEntity30PorcentFactory());
 
-        final CreditAnalysisResponse creditResponse = creditAnalysisService.create(creditRequest);
-        final AnalysisEntity analysisEntity = analysisEntityArgumentCaptor.getValue();
+        final CreditAnalysisResponse response = creditAnalysisService.create(request);
+        final AnalysisEntity entity = analysisEntityArgumentCaptor.getValue();
 
-        assertEquals(creditResponse.approved(), analysisEntity.getApproved());
-        assertEquals(creditResponse.approvedLimit(), analysisEntity.getApprovedLimit());
-        assertEquals(creditResponse.withdraw(), analysisEntity.getWithdraw());
+        assertEquals(response.approved(), entity.getApproved());
+        assertEquals(response.approvedLimit(), entity.getApprovedLimit());
+        assertEquals(response.withdraw(), entity.getWithdraw());
     }
 
     @Test
     void deve_aprovar_15Porcent_da_renda_quando_valor_solicitado_for_maior_que_50Porcent_da_renda() {
-        final CreditAnalysisRequest creditAnalysisRequest = creditAnalysisRequest15PorcentFactory();
+        final CreditAnalysisRequest request = creditAnalysisRequest15PorcentFactory();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
 
-        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture()))
-                .thenReturn(analysisEntity15PorcentFactory());
+        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture())).thenReturn(analysisEntity15PorcentFactory());
 
-        final CreditAnalysisResponse creditResponse = creditAnalysisService.create(creditAnalysisRequest);
-        final AnalysisEntity analysisEntity = analysisEntityArgumentCaptor.getValue();
+        final CreditAnalysisResponse response = creditAnalysisService.create(request);
+        final AnalysisEntity entity = analysisEntityArgumentCaptor.getValue();
 
-        assertEquals(creditResponse.approved(), analysisEntity.getApproved());
-        assertEquals(creditResponse.approvedLimit(), analysisEntity.getApprovedLimit());
-        assertEquals(creditResponse.withdraw(), analysisEntity.getWithdraw());
+        assertEquals(response.approved(), entity.getApproved());
+        assertEquals(response.approvedLimit(), entity.getApprovedLimit());
+        assertEquals(response.withdraw(), entity.getWithdraw());
     }
 
     @Test
     void nao_deve_aprovar_limite_quando_pedido_for_maior_que_renda() {
-        final CreditAnalysisRequest creditAnalysisRequest = CreditAnalysisRequest.builder()
+        final CreditAnalysisRequest request = CreditAnalysisRequest.builder()
+                .clientId(id)
                 .monthlyIncome(BigDecimal.valueOf(1000.00))
                 .requestedAmount(BigDecimal.valueOf(2000.00)).build();
-
         final AnalysisEntity analysisEntity = analysisEntityApprovedFactory();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
+
         when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture())).thenReturn(analysisEntity);
 
-        final CreditAnalysisResponse creditAnalysisResponse = creditAnalysisService.create(creditAnalysisRequest);
+        final CreditAnalysisResponse response = creditAnalysisService.create(request);
         final AnalysisEntity analysis = analysisEntityArgumentCaptor.getValue();
 
-        assertEquals(creditAnalysisResponse.approved(), analysis.getApproved());
-        assertEquals(creditAnalysisResponse.withdraw(), analysis.getWithdraw());
-        assertEquals(creditAnalysisResponse.approvedLimit(), analysis.getApprovedLimit());
-        assertEquals(creditAnalysisResponse.annualInterest(), analysis.getAnnualInterest());
+        assertEquals(response.approved(), analysis.getApproved());
+        assertEquals(response.withdraw(), analysis.getWithdraw());
+        assertEquals(response.approvedLimit(), analysis.getApprovedLimit());
+        assertEquals(response.annualInterest(), analysis.getAnnualInterest());
     }
 
     @Test
     void deve_fazer_caculo_da_analise_utilizando_valor_maximo_da_renda_considerado() {
         CreditAnalysisRequest request = CreditAnalysisRequest.builder()
+                .clientId(id)
                 .monthlyIncome(BigDecimal.valueOf(100000.00))
                 .requestedAmount(BigDecimal.valueOf(40000.00))
                 .build();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
-        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture()))
-                .thenReturn(analysisEntityCalculateMaxFactory());
 
-        final CreditAnalysisResponse creditResponse = creditAnalysisService.create(request);
-        final AnalysisEntity analysisEntity = analysisEntityArgumentCaptor.getValue();
+        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture())).thenReturn(analysisEntityCalculateMaxFactory());
 
-        assertEquals(creditResponse.approved(), analysisEntity.getApproved());
-        assertEquals(creditResponse.approvedLimit(), analysisEntity.getApprovedLimit());
-        assertEquals(creditResponse.withdraw(), analysisEntity.getWithdraw());
+        final CreditAnalysisResponse response = creditAnalysisService.create(request);
+        final AnalysisEntity entity = analysisEntityArgumentCaptor.getValue();
+
+        assertEquals(response.approved(), entity.getApproved());
+        assertEquals(response.approvedLimit(), entity.getApprovedLimit());
+        assertEquals(response.withdraw(), entity.getWithdraw());
     }
 
     @Test
     void deve_lancar_NumberNotNegativeException_ao_solicitar_analise_com_numeros_negativos_ou_zero_na_renda() {
-        CreditAnalysisRequest creditAnalysisRequest = CreditAnalysisRequest.builder()
+        CreditAnalysisRequest request = CreditAnalysisRequest.builder()
+                .clientId(id)
                 .requestedAmount(BigDecimal.valueOf(1000.0))
                 .monthlyIncome(BigDecimal.valueOf(-100.00)).build();
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
 
-        final NumberNotNegativeException numberNotNegativeException = assertThrows(NumberNotNegativeException.class, () ->
-                creditAnalysisService.create(creditAnalysisRequest));
+        final NumberNotNegativeException numberNotNegativeException = assertThrows(NumberNotNegativeException.class,
+                () -> creditAnalysisService.create(request));
 
         assertEquals("MonthlyIncome cannot be negative or zero", numberNotNegativeException.getMessage());
     }
@@ -154,73 +222,39 @@ class CreditAnalysisServiceTest {
 
     @Test
     void deve_lancar_NumberNotNegativeException_ao_solicitar_analise_com_numeros_negativos_ou_zero_no_pedido() {
-        CreditAnalysisRequest creditAnalysisRequest = CreditAnalysisRequest.builder().requestedAmount(BigDecimal.ZERO).monthlyIncome(
-                BigDecimal.valueOf(1000.00)).build();
+        CreditAnalysisRequest request = CreditAnalysisRequest.builder()
+                .clientId(id)
+                .requestedAmount(BigDecimal.ZERO).
+                monthlyIncome(BigDecimal.valueOf(1000.00)).build();
+
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
 
-        final NumberNotNegativeException numberNotNegativeException = assertThrows(NumberNotNegativeException.class, () ->
-                creditAnalysisService.create(creditAnalysisRequest));
+        final NumberNotNegativeException numberNotNegativeException = assertThrows(NumberNotNegativeException.class,
+                () -> creditAnalysisService.create(request));
 
         assertEquals("AmountRequest cannot be negative or zero", numberNotNegativeException.getMessage());
     }
 
-    public static AnalysisEntity analysisEntityApprovedFactory() {
-        return AnalysisEntity.builder()
-                .approved(false)
-                .approvedLimit(BigDecimal.ZERO)
-                .withdraw(BigDecimal.ZERO)
-                .annualInterest(BigDecimal.ZERO)
-                .build();
+    @Test
+    void deve_lancar_AnalysisNotFoundException_quando_consultar_por_id_do_cliente_e_analise_nao_existir() {
+        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
+
+        when(creditAnalysisRepository.findByClientId(uuidArgumentCaptor.capture())).thenReturn(List.of());
+
+        AnalysisNotFoundException exception = assertThrows(AnalysisNotFoundException.class,
+                () -> creditAnalysisService.getAnalysisByClient(String.valueOf(id)));
+
+        assertEquals("Analysis not found by client ID %s".formatted(id), exception.getMessage());
     }
 
-    public static CreditAnalysisRequest creditAnalysisRequest30PorcentFactory() {
-        return CreditAnalysisRequest.builder()
-                .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
-                .monthlyIncome(BigDecimal.valueOf(3000.00))
-                .requestedAmount(BigDecimal.valueOf(1500.00))
-                .build();
-    }
+    @Test
+    void deve_lancar_ClientNotFoundException_quando_consultar_por_cpf_e_cliente_nao_existir() {
+        when(apiClient.getClientByCpf(cpfArgumentCaptor.capture())).thenReturn(Optional.empty());
 
-    public static CreditAnalysisRequest creditAnalysisRequest15PorcentFactory() {
-        return CreditAnalysisRequest.builder()
-                .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
-                .monthlyIncome(BigDecimal.valueOf(3000.00))
-                .requestedAmount(BigDecimal.valueOf(2000.00))
-                .build();
-    }
+        ClientNotFoundException clientNotFoundException = assertThrows(ClientNotFoundException.class,
+                () -> creditAnalysisService.getAnalysisByClient("927.064.820-60"));
 
-    public static AnalysisEntity analysisEntityCalculateMaxFactory() {
-        return AnalysisEntity.builder()
-                .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
-                .approved(true)
-                .approvedLimit(BigDecimal.valueOf(7500.00).setScale(2))
-                .withdraw(BigDecimal.valueOf(750.00).setScale(2))
-                .build();
-    }
-
-    public static ApiClientDto apiClientDtoFactory() {
-        return  ApiClientDto.builder()
-                .id(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
-                .build();
-    }
-
-    public static AnalysisEntity analysisEntity30PorcentFactory() {
-        return AnalysisEntity.builder()
-                .approved(true)
-                .approvedLimit(BigDecimal.valueOf(900.00).setScale(2))
-                .withdraw(BigDecimal.valueOf(90.00).setScale(2))
-                .annualInterest(BigDecimal.valueOf(15))
-                .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
-                .build();
-    }
-
-    public static AnalysisEntity analysisEntity15PorcentFactory() {
-        return AnalysisEntity.builder()
-                .approved(true)
-                .approvedLimit(BigDecimal.valueOf(450.00).setScale(2))
-                .withdraw(BigDecimal.valueOf(45.00).setScale(2))
-                .annualInterest(BigDecimal.valueOf(15))
-                .clientId(UUID.fromString("438b2f95-4560-415b-98c2-9770cc1c4d93"))
-                .build();
+        assertEquals("92706482060", cpfArgumentCaptor.getValue());
+        assertEquals("Client not found by cpf 92706482060", clientNotFoundException.getMessage());
     }
 }
