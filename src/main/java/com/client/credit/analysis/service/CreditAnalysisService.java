@@ -77,7 +77,6 @@ public class CreditAnalysisService {
             return CreditAnalysis.builder().approved(false).approvedLimit(BigDecimal.ZERO).withdraw(BigDecimal.ZERO).annualInterest(BigDecimal.ZERO)
                     .build();
         }
-
         BigDecimal monthlyIncomeLimitForCalculate = monthlyIncome;
         final BigDecimal amountLimit = BigDecimal.valueOf(50000);
         final int checkingMonthlyIncomeValue = monthlyIncome.compareTo(amountLimit);
@@ -128,7 +127,7 @@ public class CreditAnalysisService {
         }
     }
 
-    public List<CreditAnalysisResponse> findAllClients() {
+    public List<CreditAnalysisResponse> findAllAnalysis() {
         LOGGER.info("Mostrando todas análises cadastradas");
         final List<AnalysisEntity> analysis;
         analysis = creditAnalysisRepository.findAll();

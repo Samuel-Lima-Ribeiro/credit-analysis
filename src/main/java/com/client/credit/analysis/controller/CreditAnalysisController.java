@@ -30,7 +30,7 @@ public class CreditAnalysisController {
 
     @GetMapping(path = "/analysis")
     public List<CreditAnalysisResponse> searchAllClients() {
-        return creditAnalysisService.findAllClients();
+        return creditAnalysisService.findAllAnalysis();
     }
 
     @GetMapping(path = "/analysis/client/{id}")

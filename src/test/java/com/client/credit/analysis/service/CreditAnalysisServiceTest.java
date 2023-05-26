@@ -119,9 +119,6 @@ class CreditAnalysisServiceTest {
                 .build();
     }
 
-//    @Test
-//    void
-
     @Test
     void deve_aprovar_30Porcento_da_renda_quando_valor_solicitado_for_menor_ou_igual_50Porcento_da_renda() {
         final CreditAnalysisRequest request = creditAnalysisRequest30PorcentFactory();
@@ -160,11 +157,10 @@ class CreditAnalysisServiceTest {
                 .clientId(id)
                 .monthlyIncome(BigDecimal.valueOf(1000.00))
                 .requestedAmount(BigDecimal.valueOf(2000.00)).build();
-        final AnalysisEntity analysisEntity = analysisEntityApprovedFactory();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
 
-        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture())).thenReturn(analysisEntity);
+        when(creditAnalysisRepository.save(analysisEntityArgumentCaptor.capture())).thenReturn(analysisEntityApprovedFactory());
 
         final CreditAnalysisResponse response = creditAnalysisService.create(request);
         final AnalysisEntity analysis = analysisEntityArgumentCaptor.getValue();
@@ -210,7 +206,7 @@ class CreditAnalysisServiceTest {
     }
 
     @Test
-    void deve_lancar_ClientNotFoundException_ao_consultar_api_por_id_inexistente() {
+    void deve_lancar_ClientNotFoundException_ao_consultar_api_por_cliente_id_inexistente() {
         final CreditAnalysisRequest request = creditAnalysisRequest15PorcentFactory();
 
         when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenThrow(FeignException.class);
@@ -218,6 +214,15 @@ class CreditAnalysisServiceTest {
                 () -> creditAnalysisService.create(request));
 
         assertEquals("Client not found by id 438b2f95-4560-415b-98c2-9770cc1c4d93", clientNotFoundException.getMessage());
+    }
+
+    @Test
+    void deve_lancar_AnalysisNotFoundException_ao_consultar_por_id_de_analise_inexistente() {
+        when(creditAnalysisRepository.findById(uuidArgumentCaptor.capture())).thenReturn(Optional.empty());
+        AnalysisNotFoundException exception = assertThrows(AnalysisNotFoundException.class,
+                () -> creditAnalysisService.getAnalysisById(id));
+
+        assertEquals("Analysis not found by id %s".formatted(id), exception.getMessage());
     }
 
     @Test
@@ -248,7 +253,7 @@ class CreditAnalysisServiceTest {
     }
 
     @Test
-    void deve_lancar_ClientNotFoundException_quando_consultar_por_cpf_e_cliente_nao_existir() {
+    void deve_lancar_ClientNotFoundException_quando_consultar_analise_pelo_cpf_do_cliente_e_cliente_nao_existir() {
         when(apiClient.getClientByCpf(cpfArgumentCaptor.capture())).thenReturn(Optional.empty());
 
         ClientNotFoundException clientNotFoundException = assertThrows(ClientNotFoundException.class,

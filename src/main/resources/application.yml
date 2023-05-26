@@ -34,5 +34,5 @@ spring:
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQL9Dialect
 
-#url:
-#  apiclient.host: localhost:8080/v1.0/clients
+url:
+  apiclient.host: localhost:8080/v1.0/clients
