@@ -42,16 +42,18 @@ public class CreditAnalysisService {
 
     public CreditAnalysisResponse create(CreditAnalysisRequest creditAnalysisRequest) {
         final CreditAnalysis creditAnalysis = creditAnalysisMapper.from(creditAnalysisRequest);
-
+        // Pq o clientid é transformado em string?
         final ApiClientDto apiClientDto = searchClient(String.valueOf(creditAnalysis.clientId()));
+        // Não tem necessidade deste log
         LOGGER.info("Cliente encontrado");
-
+        // Não tem necessidade deste log
         LOGGER.info("Fazendo análise de credito");
         final CreditAnalysis creditAnalysisUpdateAnalysis = creditAnalysis.updateFromAnalysis(analisar(creditAnalysisRequest));
 
         final CreditAnalysis creditAnalysisUpdateClient = creditAnalysisUpdateAnalysis.updateFromClient(apiClientDto);
 
         final AnalysisEntity analysisEntity = analysisEntityMapper.from(creditAnalysisUpdateClient);
+        // Não tem necessidade deste log
         LOGGER.info("Salvando análise");
         final AnalysisEntity analysisSaved = creditAnalysisRepository.save(analysisEntity);
 
@@ -78,29 +80,34 @@ public class CreditAnalysisService {
                     .build();
         }
         BigDecimal monthlyIncomeLimitForCalculate = monthlyIncome;
+        // BigDecimal.valueOf(50000) é uma constante
         final BigDecimal amountLimit = BigDecimal.valueOf(50000);
         final int checkingMonthlyIncomeValue = monthlyIncome.compareTo(amountLimit);
 
         if (checkingMonthlyIncomeValue > 0) {
             monthlyIncomeLimitForCalculate = amountLimit;
         }
-
+        //  BigDecimal.valueOf(0.50) é uma constante
         final BigDecimal fiftyPercentOfIncome = monthlyIncomeLimitForCalculate.multiply(BigDecimal.valueOf(0.50));
 
         final BigDecimal approvalLimitPercentage;
 
         if (requestedAmount.compareTo(fiftyPercentOfIncome) > 0) {
+            // constante
             final BigDecimal percentageToCalculateLimit = BigDecimal.valueOf(0.15);
             approvalLimitPercentage = percentageToCalculateLimit;
         } else {
+            // constante
             final BigDecimal percentageToCalculateLimit = BigDecimal.valueOf(0.30);
             approvalLimitPercentage = percentageToCalculateLimit;
         }
 
         final BigDecimal approvedLimit = monthlyIncomeLimitForCalculate.multiply(approvalLimitPercentage).setScale(2, RoundingMode.HALF_EVEN);
 
+        // constante
         final BigDecimal withdrawalLimitPercentage = BigDecimal.valueOf(0.10);
 
+        // constante
         final BigDecimal annualInterest = BigDecimal.valueOf(15);
 
         final BigDecimal withdraw = approvedLimit.multiply(withdrawalLimitPercentage).setScale(2, RoundingMode.HALF_EVEN);
@@ -108,21 +115,27 @@ public class CreditAnalysisService {
         return CreditAnalysis.builder().approved(true).approvedLimit(approvedLimit).withdraw(withdraw).annualInterest(annualInterest).build();
     }
 
+    // criar consultas especificas, não utilize atributos com multiplos significados
     public ApiClientDto searchClient(String id) {
         final int LengthMaxCpf = 15;
         try {
             if (id.length() < LengthMaxCpf) {
                 final String idFormat = formatCpf(id);
+                // Log desnecessario
                 LOGGER.info("Buscando na api o cliente do cpf %s".formatted(idFormat));
 
                 return apiClient.getClientByCpf(idFormat)
                         .orElseThrow(() -> new ClientNotFoundException("Client not found by cpf %s".formatted(idFormat)));
             } else {
+                // seu codigo pode quebrar aqui
                 final UUID idFormated = UUID.fromString(id);
+                // Log desnecessario
                 LOGGER.info("Buscando na api o cliente do ID %s".formatted(idFormated));
                 return apiClient.getClientById(idFormated);
             }
+
         } catch (FeignException e) {
+            // PQ esta exceção é lançada aqui?
             throw new ClientNotFoundException("Client not found by id %s".formatted(id));
         }
     }
@@ -135,15 +148,18 @@ public class CreditAnalysisService {
     }
 
     public CreditAnalysisResponse getAnalysisById(UUID id) {
+        // log desnecessario
         LOGGER.info("Consultando análise pelo id %s".formatted(id));
         final AnalysisEntity analysis =
                 creditAnalysisRepository.findById(id).orElseThrow(() -> new AnalysisNotFoundException("Analysis not found by id %s".formatted(id)));
+        // log desnecessario
         LOGGER.info("Análise encontrada");
         return creditAnalysisReponseMapper.from(analysis);
     }
 
     public List<CreditAnalysisResponse> getAnalysisByClient(String id) {
         final ApiClientDto client = searchClient(id);
+        // log desnecessario
         LOGGER.info("Cliente encontrado, consultando análises pelo ID do cliente");
 
         final List<AnalysisEntity> analysis;
@@ -152,7 +168,7 @@ public class CreditAnalysisService {
         if (analysis.isEmpty()) {
             throw new AnalysisNotFoundException("Analysis not found by client ID %s".formatted(client.id()));
         }
-
+        // log desnecessario
         LOGGER.info("Retornando análises encontradas");
         return analysis.stream().map(creditAnalysisReponseMapper::from).collect(Collectors.toList());
     }

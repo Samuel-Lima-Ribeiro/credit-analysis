@@ -14,6 +14,7 @@ public interface ApiClient {
     @GetMapping(path = "/{id}")
     ApiClientDto getClientById(@PathVariable(value = "id") UUID id);
 
+    // Este endpoint na api de client foi criado sem necessidade
     @GetMapping()
     Optional<ApiClientDto> getClientByCpf(@RequestParam(value = "cpf") String cpf);
 }

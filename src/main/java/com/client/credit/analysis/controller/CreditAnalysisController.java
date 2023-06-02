@@ -33,6 +33,8 @@ public class CreditAnalysisController {
         return creditAnalysisService.findAllAnalysis();
     }
 
+    // Existe um recurso de client nesta api?
+    // Cuidado com ambiguidade, o id pode ser um cpf?
     @GetMapping(path = "/analysis/client/{id}")
     public List<CreditAnalysisResponse> getAnalysisByClient(@PathVariable(value = "id") String id) {
         return creditAnalysisService.getAnalysisByClient(id);
