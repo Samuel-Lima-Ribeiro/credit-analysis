@@ -1,0 +1,12 @@
+package com.client.credit.analysis.repository;
+
+import com.client.credit.analysis.repository.entity.AnalysisEntity;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CreditAnalysisRepository extends JpaRepository<AnalysisEntity, UUID> {
+
+    List<AnalysisEntity> findByClientId(UUID clientId);
+
+}

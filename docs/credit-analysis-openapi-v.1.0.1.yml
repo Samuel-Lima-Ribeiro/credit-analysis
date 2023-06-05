@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Credit Analysis API
   description: API for credit analysis
-  version: 1.0.0
+  version: 1.0.1
 servers:
   - url: http://localhost:9001
 tags:
@@ -25,11 +25,11 @@ paths:
                 monthlyIncome:
                   type: number
                   format: float
-                  description: Monthly income 
+                  description: Monthly income
                 requestedAmount:
                   type: number
                   format: float
-                  description: Requested loan amount 
+                  description: Requested loan amount
       responses:
         '200':
           description: Successful response
@@ -49,8 +49,9 @@ paths:
                     format: float
                     description: Approved loan limit
                   withdraw:
-                    type: boolean
-                    description: Indicates if the loan amount was withdrawn
+                    type: number
+                    example: 1000
+                    description: Indicates amount was withdrawn
                   annualInterest:
                     type: number
                     format: float
@@ -97,14 +98,15 @@ paths:
                     approvedLimit:
                       type: number
                       format: float
-                      description: Approved loan limit 
+                      description: Approved loan limit
                     requestedAmount:
                       type: number
                       format: float
-                      description: Requested loan amount 
+                      description: Requested loan amount
                     withdraw:
-                      type: boolean
-                      description: Indicates if the loan amount was withdrawn
+                      type: number
+                      example: 1000
+                      description: Indicates amount was withdrawn
                     annualInterest:
                       type: number
                       format: float
@@ -114,9 +116,9 @@ paths:
                       format: uuid
                     date:
                       type: string
-                      format: date-time           
+                      format: date-time
         '404':
-          description: Analysis not found  
+          description: Analysis not found
   /credit/analysis/{id}:
     get:
       summary: Get Analysis by ID Endpoint
@@ -146,14 +148,15 @@ paths:
                   approvedLimit:
                     type: number
                     format: float
-                    description: Approved loan limit 
+                    description: Approved loan limit
                   requestedAmount:
                     type: number
                     format: float
-                    description: Requested loan amount 
+                    description: Requested loan amount
                   withdraw:
-                    type: boolean
-                    description: Indicates if the loan amount was withdrawn
+                    type: number
+                    example: 2000
+                    description: Indicates amount was withdrawn
                   annualInterest:
                     type: number
                     format: float
@@ -163,4 +166,3 @@ paths:
                     format: date-time
         '404':
           description: Analysis not found
-
