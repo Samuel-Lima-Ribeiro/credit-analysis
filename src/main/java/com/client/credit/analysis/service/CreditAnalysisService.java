@@ -26,24 +26,24 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CreditAnalysisService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreditAnalysisService.class);
-    private final CreditAnalysisRepository creditAnalysisRepository;
-    private final AnalysisEntityMapper analysisEntityMapper;
-    private final ApiClient apiClient;
-    private final CreditAnalysisReponseMapper creditAnalysisReponseMapper;
     static final BigDecimal AMOUNT_LIMIT = BigDecimal.valueOf(50000);
     static final BigDecimal WITHDRAWAL_LIMIT_PERCENTAGE = BigDecimal.valueOf(0.10);
     static final BigDecimal ANNUAL_INTEREST = BigDecimal.valueOf(15);
     static final BigDecimal APPROVAL_LIMIT_FIFTEEN_PERCENT_OF_INCOME = BigDecimal.valueOf(0.15);
     static final BigDecimal APPROVAL_LIMIT_THIRTY_PERCENT_OF_INCOME = BigDecimal.valueOf(0.30);
     static final BigDecimal CALCULATE_FIFTY_PERCENT_OF_INCOME = BigDecimal.valueOf(0.50);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreditAnalysisService.class);
+    private final CreditAnalysisRepository creditAnalysisRepository;
+    private final AnalysisEntityMapper analysisEntityMapper;
+    private final ApiClient apiClient;
+    private final CreditAnalysisReponseMapper creditAnalysisReponseMapper;
 
     private static String formatCpf(String cpf) {
         return cpf.replaceAll("[-.]", "");
     }
 
     public CreditAnalysisResponse create(CreditAnalysisRequest creditAnalysisRequest) {
-        final ApiClientDto apiClientDto = searchClientByID(creditAnalysisRequest.clientId());
+        searchClientByID(creditAnalysisRequest.clientId());
 
         final CreditAnalysis creditAnalysis = analisar(creditAnalysisRequest);
 
@@ -117,13 +117,11 @@ public class CreditAnalysisService {
         return apiClientDtoList.get(0);
     }
 
-    public ApiClientDto searchClientByID(UUID idClient) {
+    public void searchClientByID(UUID idClient) {
         final ApiClientDto apiClientDto = apiClient.getClientById(idClient);
-        System.out.println(apiClientDto);
         if (apiClientDto.id() == null) {
             throw new ClientNotFoundException("Client not found by id %s".formatted(idClient));
         }
-        return apiClientDto;
     }
 
     public CreditAnalysisResponse getAnalysisById(UUID id) {
@@ -136,9 +134,9 @@ public class CreditAnalysisService {
     public List<CreditAnalysisResponse> getAnalysisByClientId(UUID idClient) {
         final List<AnalysisEntity> analysis;
         if (idClient != null) {
-            final ApiClientDto apiClientDto = searchClientByID(idClient);
+            searchClientByID(idClient);
 
-            analysis = creditAnalysisRepository.findByClientId(apiClientDto.id());
+            analysis = creditAnalysisRepository.findByClientId(idClient);
         } else {
             analysis = creditAnalysisRepository.findAll();
         }

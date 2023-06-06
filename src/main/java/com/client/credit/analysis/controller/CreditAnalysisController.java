@@ -42,7 +42,7 @@ public class CreditAnalysisController {
     public List<CreditAnalysisResponse> getAnalysisByIdClient(
             @RequestParam(value = "idClient", required = false) UUID idClient,
             @RequestParam(value = "cpfClient", required = false) @Valid @CPF(message = "cpf invalid") String cpfClient) {
-        if (cpfClient != null ) {
+        if (cpfClient != null) {
             return creditAnalysisService.getAnalysisByClientCpf(cpfClient);
         }
         return creditAnalysisService.getAnalysisByClientId(idClient);
