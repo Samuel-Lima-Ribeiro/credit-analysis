@@ -22,8 +22,8 @@ public class ControlExceptionHandler {
     @ExceptionHandler(ClientNotFoundException.class)
     public ProblemDetail clientNotFoundHandleException(ClientNotFoundException exception) {
         LOGGER.error("Cliente não encontrado");
-        final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/422"));
+        final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404"));
         problemDetail.setProperty(TIMESTAMP, LocalDateTime.now());
         problemDetail.setDetail(exception.getMessage());
         return problemDetail;
@@ -51,8 +51,8 @@ public class ControlExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail constraintViolationExceptionHandle(ConstraintViolationException exception) {
-        final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
-        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/422"));
+        final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setType(URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400"));
         problemDetail.setProperty(TIMESTAMP, LocalDateTime.now());
         problemDetail.setDetail(exception.getConstraintViolations().toString());
         return problemDetail;
