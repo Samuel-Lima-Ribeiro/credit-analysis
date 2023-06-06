@@ -8,10 +8,11 @@ spring:
     openfeign:
       client:
         config:
-          viaCepClient:
+          apiClient:
             connectTimeout: 3000
             readTimeout: 500
             loggerLevel: BASIC
+            dismiss404: true
 
   sql:
     init:

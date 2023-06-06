@@ -207,9 +207,10 @@ class CreditAnalysisServiceTest {
 
     @Test
     void deve_lancar_ClientNotFoundException_ao_consultar_api_por_cliente_id_inexistente() {
+        final ApiClientDto apiClientDto = ApiClientDto.builder().id(null).build();
         final CreditAnalysisRequest request = creditAnalysisRequest15PorcentFactory();
 
-        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenThrow(FeignException.class);
+        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDto);
         ClientNotFoundException clientNotFoundException = assertThrows(ClientNotFoundException.class,
                 () -> creditAnalysisService.create(request));
 
@@ -240,24 +241,25 @@ class CreditAnalysisServiceTest {
         assertEquals("AmountRequest cannot be negative or zero", numberNotNegativeException.getMessage());
     }
 
-    @Test
-    void deve_lancar_AnalysisNotFoundException_quando_consultar_por_id_do_cliente_e_analise_nao_existir() {
-        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
-
-        when(creditAnalysisRepository.findByClientId(uuidArgumentCaptor.capture())).thenReturn(List.of());
-
-        AnalysisNotFoundException exception = assertThrows(AnalysisNotFoundException.class,
-                () -> creditAnalysisService.getAnalysisByClient(String.valueOf(id)));
-
-        assertEquals("Analysis not found by client ID %s".formatted(id), exception.getMessage());
-    }
+    // deve retornar vazio
+//    @Test
+//    void deve_lancar_AnalysisNotFoundException_quando_consultar_por_id_do_cliente_e_analise_nao_existir() {
+//        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
+//
+//        when(creditAnalysisRepository.findByClientId(uuidArgumentCaptor.capture())).thenReturn(List.of());
+//
+//        AnalysisNotFoundException exception = assertThrows(AnalysisNotFoundException.class,
+//                () -> creditAnalysisService.getAnalysisByClientId(id));
+//
+//        assertEquals("Analysis not found by client ID %s".formatted(id), exception.getMessage());
+//    }
 
     @Test
     void deve_lancar_ClientNotFoundException_quando_consultar_analise_pelo_cpf_do_cliente_e_cliente_nao_existir() {
-        when(apiClient.getClientByCpf(cpfArgumentCaptor.capture())).thenReturn(Optional.empty());
+        when(apiClient.getClientByCpf(cpfArgumentCaptor.capture())).thenReturn(List.of());
 
         ClientNotFoundException clientNotFoundException = assertThrows(ClientNotFoundException.class,
-                () -> creditAnalysisService.getAnalysisByClient("927.064.820-60"));
+                () -> creditAnalysisService.getAnalysisByClientCpf("927.064.820-60"));
 
         assertEquals("92706482060", cpfArgumentCaptor.getValue());
         assertEquals("Client not found by cpf 92706482060", clientNotFoundException.getMessage());
