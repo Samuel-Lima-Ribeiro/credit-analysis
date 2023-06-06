@@ -19,7 +19,6 @@ import com.client.credit.analysis.mapper.CreditAnalysisReponseMapper;
 import com.client.credit.analysis.mapper.CreditAnalysisReponseMapperImpl;
 import com.client.credit.analysis.repository.CreditAnalysisRepository;
 import com.client.credit.analysis.repository.entity.AnalysisEntity;
-import feign.FeignException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -249,7 +248,7 @@ class CreditAnalysisServiceTest {
 
         List<CreditAnalysisResponse> creditAnalysisResponses = creditAnalysisService.getAnalysisByClientId(id);
 
-        assertEquals(List.of() , creditAnalysisResponses);
+        assertEquals(List.of(), creditAnalysisResponses);
     }
 
     @Test
@@ -271,5 +270,33 @@ class CreditAnalysisServiceTest {
 
         List<CreditAnalysisResponse> creditAnalysisResponses = creditAnalysisService.getAnalysisByClientId(null);
         assertEquals(entities.size(), creditAnalysisResponses.size());
+    }
+
+    @Test
+    void deve_retornar_uma_lista_de_analises_de_credito_buscando_pelo_cpf_do_cliente() {
+        final AnalysisEntity entity = analysisEntity30PorcentFactory();
+        final List<AnalysisEntity> entities = List.of(entity, entity);
+        when(apiClient.getClientByCpf(cpfArgumentCaptor.capture())).thenReturn(List.of(apiClientDtoFactory()));
+        when(creditAnalysisRepository.findByClientId(uuidArgumentCaptor.capture())).thenReturn(entities);
+
+        List<CreditAnalysisResponse> creditAnalysisResponses = creditAnalysisService.getAnalysisByClientCpf("927.064.820-60");
+        assertEquals("92706482060", cpfArgumentCaptor.getValue());
+        assertEquals(entities.size(), creditAnalysisResponses.size());
+    }
+
+    @Test
+    void deve_retornar_uma_analise_de_credito_quando_consultada_pelo_id_da_analise() {
+        final AnalysisEntity entity = analysisEntityApprovedFactory();
+        when(creditAnalysisRepository.findById(uuidArgumentCaptor.capture())).thenReturn(Optional.ofNullable(entity));
+
+        final CreditAnalysisResponse response = creditAnalysisService.getAnalysisById(id);
+
+        assertEquals(id , uuidArgumentCaptor.getValue());
+        assertEquals(entity.getId(), response.id());
+        assertEquals(entity.getApproved(), response.approved());
+        assertEquals(entity.getApprovedLimit(), response.approvedLimit());
+        assertEquals(entity.getWithdraw(), response.withdraw());
+        assertEquals(entity.getClientId(), response.clientId());
+        assertEquals(entity.getDate(), response.date());
     }
 }
