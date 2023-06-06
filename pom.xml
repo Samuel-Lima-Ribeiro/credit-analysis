@@ -66,12 +66,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-<!--		Não tem necessidade desta dependencia-->
-		<dependency>
-			<groupId>org.jacoco</groupId>
-			<artifactId>jacoco-maven-plugin</artifactId>
-			<version>0.8.10</version>
-		</dependency>
 
 	</dependencies>
 	<dependencyManagement>
@@ -148,6 +142,19 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<excludes>
+						<exclude>com/client/credit/analysis/apiclient/dto/**</exclude>
+						<exclude>com/client/credit/analysis/**/*MapperImpl.*</exclude>
+						<exclude>com/client/credit/analysis/**/utils/**</exclude>
+						<exclude>com/client/credit/analysis/**/model/**</exclude>
+						<exclude>com/client/credit/analysis/**/controller/**</exclude>
+						<exclude>com/client/credit/analysis/**/exception/**</exclude>
+						<exclude>com/client/credit/analysis/**/repository/**</exclude>
+						<exclude>com/client/credit/analysis/**/exceptionhandler/**</exclude>
+						<exclude>com/client/credit/analysis/Application.*</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

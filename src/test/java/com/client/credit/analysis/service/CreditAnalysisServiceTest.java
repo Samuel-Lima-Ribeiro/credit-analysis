@@ -241,18 +241,16 @@ class CreditAnalysisServiceTest {
         assertEquals("AmountRequest cannot be negative or zero", numberNotNegativeException.getMessage());
     }
 
-    // deve retornar vazio
-//    @Test
-//    void deve_lancar_AnalysisNotFoundException_quando_consultar_por_id_do_cliente_e_analise_nao_existir() {
-//        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
-//
-//        when(creditAnalysisRepository.findByClientId(uuidArgumentCaptor.capture())).thenReturn(List.of());
-//
-//        AnalysisNotFoundException exception = assertThrows(AnalysisNotFoundException.class,
-//                () -> creditAnalysisService.getAnalysisByClientId(id));
-//
-//        assertEquals("Analysis not found by client ID %s".formatted(id), exception.getMessage());
-//    }
+    @Test
+    void deve_retornar_vazio_quando_consultar_por_id_do_cliente_e_analise_nao_existir() {
+
+        when(apiClient.getClientById(uuidArgumentCaptor.capture())).thenReturn(apiClientDtoFactory());
+        when(creditAnalysisRepository.findByClientId(uuidArgumentCaptor.capture())).thenReturn(List.of());
+
+        List<CreditAnalysisResponse> creditAnalysisResponses = creditAnalysisService.getAnalysisByClientId(id);
+
+        assertEquals(List.of() , creditAnalysisResponses);
+    }
 
     @Test
     void deve_lancar_ClientNotFoundException_quando_consultar_analise_pelo_cpf_do_cliente_e_cliente_nao_existir() {
@@ -263,5 +261,15 @@ class CreditAnalysisServiceTest {
 
         assertEquals("92706482060", cpfArgumentCaptor.getValue());
         assertEquals("Client not found by cpf 92706482060", clientNotFoundException.getMessage());
+    }
+
+    @Test
+    void deve_retornar_todas_analises_cadastradas_quando_nao_passar_nenhum_parametro() {
+        final AnalysisEntity entity = analysisEntity30PorcentFactory();
+        final List<AnalysisEntity> entities = List.of(entity, entity);
+        when(creditAnalysisRepository.findAll()).thenReturn(entities);
+
+        List<CreditAnalysisResponse> creditAnalysisResponses = creditAnalysisService.getAnalysisByClientId(null);
+        assertEquals(entities.size(), creditAnalysisResponses.size());
     }
 }
