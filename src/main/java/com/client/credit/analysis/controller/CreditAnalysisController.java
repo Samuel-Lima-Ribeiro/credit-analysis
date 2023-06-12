@@ -39,7 +39,7 @@ public class CreditAnalysisController {
     }
 
     @GetMapping
-    public List<CreditAnalysisResponse> getAnalysisByIdClient(
+    public List<CreditAnalysisResponse> getAnalysisByClient(
             @RequestParam(value = "idClient", required = false) UUID idClient,
             @RequestParam(value = "cpfClient", required = false) @Valid @CPF(message = "cpf invalid") String cpfClient) {
         if (cpfClient != null) {
