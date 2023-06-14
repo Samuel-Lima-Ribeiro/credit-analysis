@@ -1,3 +1,8 @@
+x-database-variables: &database-variables
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+  SPRING_DATASOURCE_USERNAME: admin
+  SPRING_DATASOURCE_PASSWORD: senha123
+
 services:
   postgres:
     image: postgres
@@ -13,3 +18,13 @@ services:
     restart: always
     ports:
       - 9000:8080
+
+  api-client:
+    build: .
+    image: client-api
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+    environment:
+      <<: *database-variables

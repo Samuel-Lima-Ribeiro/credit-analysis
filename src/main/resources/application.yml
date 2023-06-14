@@ -8,10 +8,11 @@ spring:
     openfeign:
       client:
         config:
-          viaCepClient:
+          apiClient:
             connectTimeout: 3000
             readTimeout: 500
             loggerLevel: BASIC
+            dismiss404: true
 
   sql:
     init:
@@ -24,7 +25,7 @@ spring:
     hikari:
       minimum-idle: 0
       maximum-pool-size: 15
-      connection-timeout: 1000
+      connection-timeout: 3000
       idle-timeout: 300000
       max-lifetime: 600000
       initialization-fail-timeout: -1
@@ -32,7 +33,16 @@ spring:
   jpa:
     generate-ddl: false
     show-sql: true
+    properties:
+      "[hibernate.generate_statistics]": true
     database-platform: org.hibernate.dialect.PostgreSQL9Dialect
 
 url:
   apiclient.host: localhost:8080/v1.0/clients
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - "metrics"
