@@ -1,6 +1,5 @@
 package com.client.credit.analysis.model;
 
-import com.client.credit.analysis.apiclient.dto.ApiClientDto;
 import com.client.credit.analysis.utils.ValidationCustom;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
@@ -27,20 +26,5 @@ public record CreditAnalysis(
         this.annualInterest = annualInterest;
         this.clientId = clientId;
         ValidationCustom.validator(this);
-    }
-
-    public CreditAnalysis updateFromAnalysis(CreditAnalysis analysis) {
-        return this.toBuilder()
-                .approved(analysis.approved)
-                .approvedLimit(analysis.approvedLimit)
-                .withdraw(analysis.withdraw)
-                .annualInterest(analysis.annualInterest)
-                .build();
-    }
-
-    public CreditAnalysis updateFromClient(ApiClientDto client) {
-        return this.toBuilder()
-                .clientId(client.id())
-                .build();
     }
 }
