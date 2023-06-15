@@ -42,7 +42,26 @@ url:
 
 management:
   endpoints:
+    enabled-by-default: false
     web:
       exposure:
-        include:
-          - "metrics"
+        include: "*"
+  info: # Responsavel por fazer as info do application.yml aparecer
+    env:
+      enabled: true
+  metrics:
+    enable:
+      executor: false
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    metrics:
+      enabled: true
+    info:
+      enabled: true
+    prometheus:
+      enabled: true
+
+info:
+  version: "1.0"
