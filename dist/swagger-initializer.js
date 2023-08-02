@@ -3,7 +3,7 @@ window.onload = function() {
 
   // the following lines will be replaced by docker/configurator, when it runs in a docker-container
   window.ui = SwaggerUIBundle({
-    url: "credit-analysis-openapi-v.1.0.1.yml",
+    url: "credit-analysis-openapi-v.1.0.1.yaml",
     dom_id: '#swagger-ui',
     deepLinking: true,
     presets: [
